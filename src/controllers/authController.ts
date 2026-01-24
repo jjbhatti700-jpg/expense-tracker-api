@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import jwt, { SignOptions } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import User from '../models/User'
 
 // ====================================
@@ -8,10 +8,7 @@ import User from '../models/User'
 
 const generateToken = (userId: string): string => {
   const secret = process.env.JWT_SECRET || 'fallback-secret'
-  const options: SignOptions = {
-    expiresIn: '7d'
-  }
-  return jwt.sign({ id: userId }, secret, options)
+  return jwt.sign({ id: userId }, secret, { expiresIn: '7d' } as jwt.SignOptions)
 }
 
 // ====================================
@@ -22,7 +19,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password } = req.body
 
-    // Validate required fields
     if (!name || !email || !password) {
       res.status(400).json({
         success: false,
@@ -31,7 +27,6 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email })
     if (existingUser) {
       res.status(400).json({
@@ -41,53 +36,28 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Create user
-    const user = await User.create({
-      name,
-      email,
-      password,
-    })
-
-    // Generate token
+    const user = await User.create({ name, email, password })
     const token = generateToken(user._id.toString())
 
     res.status(201).json({
       success: true,
       data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
+        user: { id: user._id, name: user.name, email: user.email },
         token,
       },
     })
   } catch (error: any) {
     console.error('Signup error:', error)
-
-    // Handle validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((e: any) => e.message)
-      res.status(400).json({
-        success: false,
-        message: messages.join(', '),
-      })
+      res.status(400).json({ success: false, message: messages.join(', ') })
       return
     }
-
-    // Handle duplicate email error
     if (error.code === 11000) {
-      res.status(400).json({
-        success: false,
-        message: 'User with this email already exists',
-      })
+      res.status(400).json({ success: false, message: 'User with this email already exists' })
       return
     }
-
-    res.status(500).json({
-      success: false,
-      message: 'Server error during signup',
-    })
+    res.status(500).json({ success: false, message: 'Server error during signup' })
   }
 }
 
@@ -99,7 +69,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body
 
-    // Validate required fields
     if (!email || !password) {
       res.status(400).json({
         success: false,
@@ -108,48 +77,32 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Find user and include password for comparison
     const user = await User.findOne({ email }).select('+password')
 
     if (!user) {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid email or password',
-      })
+      res.status(401).json({ success: false, message: 'Invalid email or password' })
       return
     }
 
-    // Check password
     const isMatch = await user.comparePassword(password)
 
     if (!isMatch) {
-      res.status(401).json({
-        success: false,
-        message: 'Invalid email or password',
-      })
+      res.status(401).json({ success: false, message: 'Invalid email or password' })
       return
     }
 
-    // Generate token
     const token = generateToken(user._id.toString())
 
     res.status(200).json({
       success: true,
       data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
+        user: { id: user._id, name: user.name, email: user.email },
         token,
       },
     })
   } catch (error) {
     console.error('Login error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Server error during login',
-    })
+    res.status(500).json({ success: false, message: 'Server error during login' })
   }
 }
 
@@ -159,30 +112,19 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
-    // User is attached to request by auth middleware
     const user = await User.findById((req as any).user.id)
 
     if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      })
+      res.status(404).json({ success: false, message: 'User not found' })
       return
     }
 
     res.status(200).json({
       success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      data: { id: user._id, name: user.name, email: user.email },
     })
   } catch (error) {
     console.error('Get me error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-    })
+    res.status(500).json({ success: false, message: 'Server error' })
   }
 }
