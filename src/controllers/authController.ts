@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import jwt from 'jsonwebtoken'
+import jwt, { SignOptions } from 'jsonwebtoken'
 import User from '../models/User'
 
 // ====================================
@@ -7,11 +7,11 @@ import User from '../models/User'
 // ====================================
 
 const generateToken = (userId: string): string => {
-  return jwt.sign(
-    { id: userId },
-    process.env.JWT_SECRET || 'fallback-secret',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  )
+  const secret = process.env.JWT_SECRET || 'fallback-secret'
+  const options: SignOptions = {
+    expiresIn: '7d'
+  }
+  return jwt.sign({ id: userId }, secret, options)
 }
 
 // ====================================
