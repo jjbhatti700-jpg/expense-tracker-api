@@ -18,7 +18,7 @@ import { seedCategories } from './controllers/categoryController'
 // ====================================
 
 const app: Express = express()
-const PORT = process.env.PORT || 5000
+const PORT = Number(process.env.PORT) || 5000
 
 // ====================================
 // MIDDLEWARE
@@ -86,19 +86,20 @@ const startServer = async () => {
     await seedCategories()
 
     // Start listening
-    app.listen(PORT, () => {
-      console.log(`
+    // Start listening
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`
 ╔════════════════════════════════════════════╗
 ║                                            ║
 ║   🚀 ExpenseFlow API Server                ║
 ║                                            ║
-║   Server:  http://localhost:${PORT}          ║
+║   Server:  http://0.0.0.0:${PORT}            ║
 ║   Status:  Running                         ║
 ║   Mode:    ${process.env.NODE_ENV || 'development'}                    ║
 ║                                            ║
 ╚════════════════════════════════════════════╝
       `)
-    })
+})
   } catch (error) {
     console.error('❌ Failed to start server:', error)
     process.exit(1)
