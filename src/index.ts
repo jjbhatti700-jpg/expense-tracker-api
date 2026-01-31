@@ -106,4 +106,4 @@ app.listen(PORT, '0.0.0.0', () => {
   }
 }
 
-startServer()
+startServer()// Railway deployment fix 
